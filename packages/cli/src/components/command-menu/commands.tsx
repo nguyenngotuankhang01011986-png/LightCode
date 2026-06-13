@@ -36,7 +36,7 @@ export const COMMANDS: Command[] = [
     value: "/logout",
   },
   {
-    name: "usuage",
+    name: "usage",
     description: "Open billing portal In your Browser",
     value: "/usage",
   },
