@@ -37,10 +37,6 @@ const textareaRef = useRef<textareaRenderable>(null);
     setSelectedIndex,
   } = useCommandMenu();
 
-  const handleCommandExecute = useCallback((index: number) => {
-    handleCommand(command);
-  }, []);
-
   const handleTextareaContentChange = useCallback(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
@@ -78,6 +74,10 @@ const textareaRef = useRef<textareaRenderable>(null);
       textarea.InsertText(command.value + " ");
     }
   }, [renderer, toast]);
+
+  const handleCommandExecute = useCallback((index: number) => {
+    handleCommand(command);
+  }, [resolveCommand, handleCommand]);
 
 
   useEffect(() => {
