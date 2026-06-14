@@ -17,16 +17,15 @@ jobs:
 
       - name: Google Gemini Code Reviewer
         uses: anc95/ChatGPT-CodeReview@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENAI_API_BASE: "https://generativelanguage.googleapis.com/v1beta/openai/"
         with:
-          openai_api_key: ${{ secrets.GEMINI_API_KEY }}
-          openai_api_base: "https://generativelanguage.googleapis.com/v1beta/openai/"
           model: "gemini-1.5-flash"
-          token: ${{ secrets.GITHUB_TOKEN }}
           prompt: |
             Bạn là một AI Code Reviewer cấp cao giống như CodeRabbit. 
             Hãy đọc các đoạn code thay đổi (diff) dưới đây. 
             Nếu phát hiện lỗi logic, lỗi bảo mật hoặc chỗ nào viết code chưa tối ưu, hãy để lại lời khuyên thật ngắn gọn, súc tích bằng tiếng Việt trực tiếp vào dòng code đó. 
             Nếu code đã tốt và không có lỗi gì, hãy bỏ qua và không bình luận gì cả.
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
