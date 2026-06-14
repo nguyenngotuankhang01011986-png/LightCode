@@ -4,6 +4,9 @@ export const COMMANDS: Command[] = [
     name: "new",
     description: "Start a New Conversation",
     value: "/new",
+    action: (ctx) => {
+      ctx.toast.show({ message: "Starting new Conversation..."});
+    },
   },
   {
     name: "agents",
@@ -36,7 +39,12 @@ export const COMMANDS: Command[] = [
     value: "/logout",
   },
   {
-    name: "usuage",
+    name: "upgrade",
+    description: "Buy More Credit",
+    value: "/upgrade",
+  },
+  {
+    name: "usage",
     description: "Open billing portal In your Browser",
     value: "/usage",
   },
