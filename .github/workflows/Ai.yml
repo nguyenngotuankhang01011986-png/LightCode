@@ -15,8 +15,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Review
         env:
@@ -25,6 +23,7 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           export PR_BASE_REF="${{ github.base_ref }}"
+          git fetch origin $PR_BASE_REF
           git diff origin/$PR_BASE_REF...HEAD > pr_diff.txt
           if [ ! -s pr_diff.txt ]; then exit 0; fi
 
@@ -34,10 +33,17 @@ jobs:
             -H "Content-Type: application/json" \
             -d "$(node -e 'console.log(JSON.stringify({contents:[{parts:[{text:process.env.PROMPT}]}]}))')")
 
-          export REVIEW_COMMENT=$(echo "$RESPONSE" | node -e "try{console.log(JSON.parse(fs.readFileSync(0)).candidates[0].content.parts[0].text)}catch(e){console.log('OK')}" 2>/dev/null || echo "OK")
+          export REVIEW_COMMENT=$(node -e "
+            try {
+              const data = JSON.parse(process.argv[1]);
+              console.log(data.candidates[0].content.parts[0].text);
+            } catch(e) {
+              console.log('OK');
+            }
+          " "$RESPONSE")
 
           if [ "$REVIEW_COMMENT" != "OK" ] && [ ! -z "$PR_NUMBER" ]; then
-            CLEAN_TEXT=$(echo "$REVIEW_COMMENT" | sed 's/[#*`]//g')
+            export CLEAN_TEXT=$(echo "$REVIEW_COMMENT" | sed 's/[#*`]//g')
             curl -s -X POST "https://api.github.com/repos/${{ github.repository }}/issues/${PR_NUMBER}/comments" \
               -H "Authorization: Bearer ${GITHUB_TOKEN}" \
               -H "Content-Type: application/json" \
