@@ -19,7 +19,6 @@ jobs:
         uses: anc95/ChatGPT-CodeReview@v1
         with:
           openai_api_key: ${{ secrets.GEMINI_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           openai_api_base: "https://generativelanguage.googleapis.com/v1beta/openai/"
           model: "gemini-1.5-flash"
           prompt: |
@@ -27,4 +26,6 @@ jobs:
             Hãy đọc các đoạn code thay đổi (diff) dưới đây. 
             Nếu phát hiện lỗi logic, lỗi bảo mật hoặc chỗ nào viết code chưa tối ưu, hãy để lại lời khuyên thật ngắn gọn, súc tích bằng tiếng Việt trực tiếp vào dòng code đó. 
             Nếu code đã tốt và không có lỗi gì, hãy bỏ qua và không bình luận gì cả.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
