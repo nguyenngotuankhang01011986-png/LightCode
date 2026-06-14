@@ -1,0 +1,29 @@
+name: AI Code Reviewer (CodeRabbit Style)
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  workflow_dispatch: {}
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Google Gemini Code Reviewer
+        uses: anc95/Gemini-CodeReview@v1
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          model: "gemini-1.5-flash"
+          prompt: |
+            Bạn là một AI Code Reviewer cấp cao giống như CodeRabbit. 
+            Hãy đọc các đoạn code thay đổi (diff) dưới đây. 
+            Nếu phát hiện lỗi logic, lỗi bảo mật hoặc chỗ nào viết code chưa tối ưu, hãy để lại lời khuyên thật ngắn gọn, súc tích bằng tiếng Việt trực tiếp vào dòng code đó. 
+            Nếu code đã tốt và không có lỗi gì, hãy bỏ qua và không bình luận gì cả.
+
