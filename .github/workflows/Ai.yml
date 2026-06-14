@@ -1,4 +1,4 @@
-name: AI Code Reviewer (Tự Chế 100%)
+name: AI Reviewer
 
 on:
   pull_request:
@@ -13,53 +13,33 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Get PR Diff and Review with Gemini
+      - name: Review
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          
-          git diff origin/${{ github.base_ref }}...HEAD > pr_diff.txt
-          
-          
-          if [ ! -s pr_diff.txt ]; then
-            echo "Không có code nào thay đổi để review."
-            exit 0
-          fi
+          export PR_BASE_REF="${{ github.base_ref }}"
+          git diff origin/$PR_BASE_REF...HEAD > pr_diff.txt
+          if [ ! -s pr_diff.txt ]; then exit 0; fi
 
-          
-          PROMPT="Bạn là một AI Code Reviewer cấp cao. Hãy đọc đoạn code thay đổi (diff) dưới đây. Nếu phát hiện lỗi logic, lỗi bảo mật hoặc chỗ nào viết chưa tối ưu, hãy để lại nhận xét thật ngắn gọn, súc tích bằng tiếng Việt. Nếu code đã tốt, chỉ cần ghi 'OK'. Đây là đoạn diff:\n\n$(cat pr_diff.txt)"
-          
-          
-          JSON_PAYLOAD=$(node -e "echo(JSON.stringify({ contents: [{ parts: [{ text: process.env.PROMPT }] }] }))" 2>/dev/null || echo "{\"contents\":[{\"parts\":[{\"text\":\"Review đoạn code này: \"}]}]}")
-
+          export PROMPT="Bạn là AI Reviewer. Review ngắn gọn đoạn diff này bằng tiếng Việt. Nếu code tốt ghi OK. Nội dung: $(cat pr_diff.txt)"
           
           RESPONSE=$(curl -s -X POST "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}" \
             -H "Content-Type: application/json" \
-            -d "{\"contents\":[{\"parts\":[{\"text\":$(node -e 'console.log(JSON.stringify(process.env.PROMPT))')}]}]}")
+            -d "$(node -e 'console.log(JSON.stringify({contents:[{parts:[{text:process.env.PROMPT}]}]}))')")
 
-          
-          REVIEW_COMMENT=$(echo "$RESPONSE" | node -e "
-            const fs = require('fs');
-            try {
-              const data = JSON.parse(fs.readFileSync(0, 'utf-8'));
-              console.log(data.candidates[0].content.parts[0].text);
-            } catch(e) {
-              console.log('Gemini không thể trả về nhận xét hoặc API Key bị lỗi.');
-            }
-          ")
+          export REVIEW_COMMENT=$(echo "$RESPONSE" | node -e "try{console.log(JSON.parse(fs.readFileSync(0)).candidates[0].content.parts[0].text)}catch(e){console.log('OK')}" 2>/dev/null || echo "OK")
 
-          echo "Gemini Review: $REVIEW_COMMENT"
-
-          
-          if [ "$REVIEW_COMMENT" != "OK" ]; then
-            curl -s -X POST "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" \
+          if [ "$REVIEW_COMMENT" != "OK" ] && [ ! -z "$PR_NUMBER" ]; then
+            CLEAN_TEXT=$(echo "$REVIEW_COMMENT" | sed 's/[#*`]//g')
+            curl -s -X POST "https://api.github.com/repos/${{ github.repository }}/issues/${PR_NUMBER}/comments" \
               -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-              -H "Accept: application/vnd.github.v3+json" \
-              -d "$(node -e "console.log(JSON.stringify({ body: '### 🤖 Gemini AI Code Review\n' + process.env.REVIEW_COMMENT }))")"
+              -H "Content-Type: application/json" \
+              -d "$(node -e "console.log(JSON.stringify({body:process.env.CLEAN_TEXT}))")"
           fi
